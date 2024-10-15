@@ -1,0 +1,146 @@
+# services:
+#   frontend:
+#     build:
+#       context: ./frontend-api
+#       dockerfile: Dockerfile
+#     ports:
+#       - "5000:5000"
+#     depends_on:
+#       rabbitmq:
+#         condition: service_healthy
+#       postgres:
+#         condition: service_healthy
+#     environment:
+#       - DB_URL=postgresql://postgres:moonlight@postgres:5432/book_library
+
+#   backend:
+#     build:
+#       context: ./backend-api
+#       dockerfile: Dockerfile
+#     ports:
+#       - "8000:8000"
+#     depends_on:
+#       rabbitmq:
+#         condition: service_healthy
+#       mysql:
+#         condition: service_healthy
+#     environment:
+#       - DB_URL=mysql+pymysql://root:moonlight@mysql/library_backend
+
+#   rabbitmq:
+#     image: rabbitmq:3-management
+#     ports:
+#       - "5672:5672"
+#       - "15672:15672"
+#     healthcheck:
+#       test: ["CMD-SHELL", "rabbitmqctl status"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+
+#   postgres:
+#     image: postgres:latest
+#     environment:
+#       POSTGRES_DB: book_library
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: moonlight
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U postgres"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+
+#   mysql:
+#     image: mysql:latest
+#     environment:
+#       MYSQL_DATABASE: library_backend
+#       MYSQL_ROOT_PASSWORD: moonlight
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#     healthcheck:
+#       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=moonlight"]
+#       interval: 30s
+#       timeout: 10s
+#       retries: 5
+
+# volumes:
+#   postgres_data:
+#   mysql_data:
+
+
+version: '3.8'  # Specify the version of Docker Compose
+
+services:
+  frontend:
+    build:
+      context: ./frontend-api
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_URL=postgresql://postgres:moonlight@postgres:5432/book_library
+    command: >
+      bash -c "python -u rabbitmq.py & uvicorn main:app --host 0.0.0.0 --port 5000"
+
+  backend:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_URL=mysql+pymysql://root:moonlight@mysql/library_backend
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmqctl status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: book_library
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: moonlight
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: library_backend
+      MYSQL_ROOT_PASSWORD: moonlight
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root --password=moonlight"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mysql_data:
