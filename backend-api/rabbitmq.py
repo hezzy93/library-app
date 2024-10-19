@@ -38,31 +38,56 @@ import crud
 from database import SessionLocal
 import schema  # Import the schema for UserCreate
 
+# def callback(ch, method, properties, body):
+#     message = json.loads(body.decode())
+#     print(f" [x] Received {message}")
+
+#     # Create a UserCreate object from the received message
+#     user_create = schema.UserCreate(
+#         email=message['email'],
+#         first_name=message['first_name'],
+#         last_name=message['last_name']
+#     )
+
+#     # Insert the received user into the backend database
+#     db = SessionLocal()
+#     crud.create_user(db=db, user=user_create)
+#     added_user = crud.create_user(db=db, user=user_create)
+#     print(f" [x] User added to frontend database: {added_user}")
+#     db.close()
+
+#     ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
 def callback(ch, method, properties, body):
-    message = json.loads(body.decode())
-    print(f" [x] Received {message}")
+    try:
+        message = json.loads(body.decode())
+        print(f" [x] Received {message}")
 
-    # Create a UserCreate object from the received message
-    user_create = schema.UserCreate(
-        email=message['email'],
-        first_name=message['first_name'],
-        last_name=message['last_name']
-    )
+        user_create = schema.UserCreate(
+            email=message['email'],
+            first_name=message['first_name'],
+            last_name=message['last_name']
+        )
 
-    # Insert the received user into the backend database
-    db = SessionLocal()
-    crud.create_user(db=db, user=user_create)
-    added_user = crud.create_user(db=db, user=user_create)
-    print(f" [x] User added to frontend database: {added_user}")
-    db.close()
+        db = SessionLocal()
+        added_user = crud.create_user(db=db, user=user_create)
+        print(f" [x] User added to backend database: {added_user}")
+        db.close()
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception as e:
+        print(f" [!] Error processing message: {e}")
+
 
 def consume_messages():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
     channel = connection.channel()
 
     channel.queue_declare(queue='user_updates')
+
+    print(' [*] Backend waiting for messages on user_updates queue...')  # Debug log
+
     channel.basic_consume(queue='user_updates', on_message_callback=callback, auto_ack=False)
 
     print(' [*] Waiting for user updates. To exit press CTRL+C')
