@@ -69,6 +69,15 @@ def borrow_book(email: str, book_borrow: schema.BookBorrow, db: Session = Depend
         raise HTTPException(status_code=400, detail="Email not registered")
 
     borrowed_book = crud.borrow_book(db=db, book_borrow=book_borrow, user_id=db_user.id)
+
+    # Publish the updated book information to RabbitMQ
+    book_message = {
+        "available": borrowed_book.available,
+        "borrower_id": borrowed_book.borrower_id,
+        "borrow_date": str(borrowed_book.borrow_date),
+        "return_date": str(borrowed_book.return_date)
+    }
+    publish_message(json.dumps(book_message))  # Send the message to RabbitMQ
     
     return schema.BorrowedBookResponse(
         book_title=borrowed_book.title,

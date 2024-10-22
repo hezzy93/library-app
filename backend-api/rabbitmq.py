@@ -1,20 +1,20 @@
 
-import pika
+# import pika
 
-def callback(ch, method, properties, body):
-    print(f" [x] Received {body.decode()}")
-    ch.basic_ack(delivery_tag=method.delivery_tag)  # Acknowledge the message
+# def callback(ch, method, properties, body):
+#     print(f" [x] Received {body.decode()}")
+#     ch.basic_ack(delivery_tag=method.delivery_tag)  # Acknowledge the message
 
-def consume_messages():
-    connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
-    channel = connection.channel()
+# def consume_messages():
+#     connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+#     channel = connection.channel()
     
-    channel.queue_declare(queue='hello')  # Ensure the queue exists
+#     channel.queue_declare(queue='hello')  # Ensure the queue exists
 
-    channel.basic_consume(queue='hello', on_message_callback=callback, auto_ack=False)
+#     channel.basic_consume(queue='hello', on_message_callback=callback, auto_ack=False)
 
-    print(' [*] Waiting for messages. To exit press CTRL+C')
-    channel.start_consuming()
+#     print(' [*] Waiting for messages. To exit press CTRL+C')
+#     channel.start_consuming()
 
 
 
